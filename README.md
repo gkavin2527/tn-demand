@@ -156,10 +156,24 @@ python build_dataset.py
 Runs at 07:00 IST daily. Fetches new data, rebuilds `master.csv`, runs the
 health check, commits. Pull with `git pull`.
 
-`health_check.py` fails the run if the demand data falls more than 5 days
-behind, the weather more than 3, `master.csv` drops below 3,000 rows, the
-target goes constant or leaves a plausible range, or the weather–demand
+`health_check.py` fails the run if the weather falls more than 3 days behind,
+`master.csv` drops below 3,000 rows or lags the demand slice it is built from,
+the target goes constant or leaves a plausible range, or the weather–demand
 correlation collapses below 0.2 — the signature of a misaligned join.
+
+Demand staleness is judged against the source rather than the calendar. Past 5
+days behind, the check compares our slice to the raw upstream download from the
+same run:
+
+| | |
+|---|---|
+| Upstream has rows we don't | **fail** — published data isn't landing, so the slice or the commit is broken |
+| Upstream is level with us | **warn** — Grid India slips over weekends and national holidays, and the rows arrive when it catches up |
+| Level with us for over 14 days | **fail** — too long to still be "running late"; assume the source has moved or died |
+
+A third party's publishing schedule shouldn't turn the run red every morning —
+that only teaches you to ignore a red run. What should turn it red is data we
+could have collected and didn't.
 
 Run it locally any time:
 
