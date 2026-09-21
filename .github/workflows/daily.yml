@@ -33,6 +33,26 @@ jobs:
       - name: Fetch demand data
         run: python fetch_demand.py
 
+              - name: Test Grid-India connectivity
+        run: |
+          python - <<'PY'
+          import requests
+
+          url = "https://webapi.grid-india.in/api/v1/file"
+
+          try:
+              response = requests.get(
+                  url,
+                  timeout=30,
+                  verify=False
+              )
+              print("Status:", response.status_code)
+              print("Response:", response.text[:500])
+          except Exception as e:
+              print("ERROR:", repr(e))
+              raise
+          PY
+
       - name: Fetch peak demand data
         run: python update_peak_demand.py
 
