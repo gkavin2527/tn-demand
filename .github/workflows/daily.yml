@@ -2,8 +2,8 @@ name: daily data update
 
 on:
   schedule:
-    - cron: "30 1 * * *"     # 07:00 IST
-  workflow_dispatch:          # lets you run it manually from the Actions tab
+    - cron: "30 1 * * *" # 07:00 IST
+  workflow_dispatch: # lets you run it manually from the Actions tab
 
 concurrency:
   group: daily-data
@@ -32,6 +32,9 @@ jobs:
 
       - name: Fetch demand data
         run: python fetch_demand.py
+
+      - name: Fetch peak demand data
+        run: python update_peak_demand.py
 
       - name: Backfill weather (first run only)
         run: |
