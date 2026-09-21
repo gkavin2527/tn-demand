@@ -70,12 +70,7 @@ def fiscal_year_for(d: date) -> str:
 # ---------------------------------------------------------
 # API
 # ---------------------------------------------------------
-
 def list_reports(fiscal_year: str, month: str = "00") -> list:
-    """
-    Get Daily PSP report metadata from Grid-India API.
-    """
-
     payload = {
         "_source": "GRDW",
         "_type": "DAILY_PSP_REPORT",
@@ -83,26 +78,52 @@ def list_reports(fiscal_year: str, month: str = "00") -> list:
         "_month": month,
     }
 
-    resp = requests.post(
-        API_URL,
-        json=payload,
-        headers=HEADERS,
-        timeout=30,
-        verify=False,   # temporary local SSL workaround
+    last_error = None
+
+    for attempt in range(3):
+        try:
+            print(
+                f"Requesting Grid-India report list "
+                f"(attempt {attempt + 1}/3)..."
+            )
+
+            resp = requests.post(
+                API_URL,
+                json=payload,
+                headers=HEADERS,
+                timeout=30,
+                verify=False,
+            )
+
+            resp.raise_for_status()
+
+            data = resp.json()
+
+            if data.get("flagType") != 0:
+                raise ValueError(
+                    f"API error: "
+                    f"flagType={data.get('flagType')} "
+                    f"msg={data.get('retMessage')!r}"
+                )
+
+            return data.get("retData", [])
+
+        except requests.RequestException as e:
+            last_error = e
+
+            print(
+                f"Grid-India API connection failed "
+                f"(attempt {attempt + 1}/3): {e}"
+            )
+
+            if attempt < 2:
+                import time
+                time.sleep(5)
+
+    raise ConnectionError(
+        f"Grid-India API unavailable after 3 attempts: "
+        f"{last_error}"
     )
-
-    resp.raise_for_status()
-
-    data = resp.json()
-
-    if data.get("flagType") != 0:
-        raise ValueError(
-            f"API error: "
-            f"flagType={data.get('flagType')} "
-            f"msg={data.get('retMessage')!r}"
-        )
-
-    return data.get("retData", [])
 
 
 # ---------------------------------------------------------

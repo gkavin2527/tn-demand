@@ -1,6 +1,7 @@
 .venv/
 __pycache__/
 .DS_Store
+downloads/
 
 # Disposable weather chunks - re-derivable from the archive API, and there are
 # 60 of them. data/weather_daily.csv is the consolidated output we do track.
