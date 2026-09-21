@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-            - name: Diagnose Grid-India connectivity
+      - name: Diagnose Grid-India connectivity
         continue-on-error: true
         run: |
           echo "=== Main site ==="
