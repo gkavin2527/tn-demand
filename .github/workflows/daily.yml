@@ -12,6 +12,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
       issues: write
@@ -33,7 +34,8 @@ jobs:
       - name: Fetch demand data
         run: python fetch_demand.py
 
-              - name: Test Grid-India connectivity
+      # Temporary connectivity test for Grid-India API
+      - name: Test Grid-India connectivity
         run: |
           python - <<'PY'
           import requests
@@ -46,8 +48,10 @@ jobs:
                   timeout=30,
                   verify=False
               )
+
               print("Status:", response.status_code)
               print("Response:", response.text[:500])
+
           except Exception as e:
               print("ERROR:", repr(e))
               raise
@@ -80,9 +84,11 @@ jobs:
       - name: Commit
         if: always()
         run: |
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add data/
+
           if git diff --staged --quiet; then
             echo "no changes"
           else
@@ -97,17 +103,25 @@ jobs:
         with:
           script: |
             const title = 'Daily data update failed';
+
             const existing = await github.rest.issues.listForRepo({
-              owner: context.repo.owner, repo: context.repo.repo,
-              state: 'open', labels: 'automation'
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'automation'
             });
+
             const body = `Run failed: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
             if (existing.data.some(i => i.title === title)) {
               console.log('issue already open');
             } else {
               await github.rest.issues.create({
-                owner: context.repo.owner, repo: context.repo.repo,
-                title, body, labels: ['automation']
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['automation']
               });
             }
 
@@ -121,18 +135,28 @@ jobs:
         with:
           script: |
             const title = 'Daily data update failed';
+
             const open = await github.rest.issues.listForRepo({
-              owner: context.repo.owner, repo: context.repo.repo,
-              state: 'open', labels: 'automation'
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'automation'
             });
-            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.name}/actions/runs/${context.runId}`;
+
             for (const i of open.data.filter(i => i.title === title)) {
               await github.rest.issues.createComment({
-                owner: context.repo.owner, repo: context.repo.repo,
-                issue_number: i.number, body: `Recovered: ${run}`
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: i.number,
+                body: `Recovered: ${run}`
               });
+
               await github.rest.issues.update({
-                owner: context.repo.owner, repo: context.repo.repo,
-                issue_number: i.number, state: 'closed'
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: i.number,
+                state: 'closed'
               });
             }
